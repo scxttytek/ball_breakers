@@ -715,6 +715,7 @@ function resetBall() {
     mainBall.active = false;
     mainBall.trail = [];
     mainBall.fireball = paddle.activePowerUps.fireball ? true : false;
+    particles = [];
 }
 
 function updateUI() {
