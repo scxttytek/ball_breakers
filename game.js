@@ -36,6 +36,45 @@ const POWER_UPS = [
     { type: 'extralife', color: '#feca57', symbol: '+', duration: 0 }
 ];
 
+const BALL_SKINS = [
+    { id: 'classic', name: 'Classic', color: '#ffffff', glowColor: '#48dbfb', trailColor: '#a2d2ff', unlocked: true, requirement: null },
+    { id: 'fire', name: 'Fire', color: '#ff6600', glowColor: '#ff0000', trailColor: '#ffaa00', unlocked: true, requirement: { type: 'score', value: 500 } },
+    { id: 'ice', name: 'Ice', color: '#00ffff', glowColor: '#00ccff', trailColor: '#ccffff', unlocked: false, requirement: { type: 'level', value: 3 } },
+    { id: 'neon', name: 'Neon', color: '#ff00ff', glowColor: '#ff00ff', trailColor: '#ff88ff', unlocked: false, requirement: { type: 'combo', value: 5 } },
+    { id: 'gold', name: 'Gold', color: '#ffd700', glowColor: '#ffaa00', trailColor: '#ffee88', unlocked: false, requirement: { type: 'score', value: 2000 } },
+    { id: 'shadow', name: 'Shadow', color: '#333333', glowColor: '#000000', trailColor: '#666666', unlocked: false, requirement: { type: 'level', value: 5 } },
+    { id: 'rainbow', name: 'Rainbow', color: '#ff0000', glowColor: '#ffffff', trailColor: '#ff00ff', unlocked: false, requirement: { type: 'score', value: 5000 } },
+    { id: 'plasma', name: 'Plasma', color: '#00ff00', glowColor: '#00ff00', trailColor: '#88ff88', unlocked: false, requirement: { type: 'combo', value: 10 } }
+];
+
+const PADDLE_SKINS = [
+    { id: 'classic', name: 'Classic', color: '#e94560', secondaryColor: '#ff6b6b', pattern: 'solid', unlocked: true, requirement: null },
+    { id: 'neon', name: 'Neon', color: '#00ff00', secondaryColor: '#88ff88', pattern: 'striped', unlocked: false, requirement: { type: 'level', value: 2 } },
+    { id: 'ocean', name: 'Ocean', color: '#0066ff', secondaryColor: '#00ccff', pattern: 'wave', unlocked: false, requirement: { type: 'score', value: 1000 } },
+    { id: 'sunset', name: 'Sunset', color: '#ff6600', secondaryColor: '#ff0066', pattern: 'gradient', unlocked: false, requirement: { type: 'level', value: 4 } },
+    { id: 'cyber', name: 'Cyber', color: '#ff00ff', secondaryColor: '#00ffff', pattern: 'cyber', unlocked: false, requirement: { type: 'score', value: 3000 } },
+    { id: 'golden', name: 'Golden', color: '#ffd700', secondaryColor: '#ffaa00', pattern: 'shimmer', unlocked: false, requirement: { type: 'combo', value: 8 } }
+];
+
+const PARTICLE_STYLES = [
+    { id: 'sparks', name: 'Sparks', unlocked: true, requirement: null },
+    { id: 'stars', name: 'Stars', unlocked: false, requirement: { type: 'level', value: 2 } },
+    { id: 'bubbles', name: 'Bubbles', unlocked: false, requirement: { type: 'score', value: 1500 } },
+    { id: 'confetti', name: 'Confetti', unlocked: false, requirement: { type: 'score', value: 3500 } },
+    { id: 'energy', name: 'Energy', unlocked: false, requirement: { type: 'combo', value: 7 } }
+];
+
+const ACHIEVEMENTS = [
+    { id: 'first_brick', name: 'First Break', description: 'Break your first brick', icon: '🧱', unlocked: false },
+    { id: 'combo_5', name: 'On Fire', description: 'Get a 5x combo', icon: '🔥', unlocked: false },
+    { id: 'combo_10', name: 'Unstoppable', description: 'Get a 10x combo', icon: '💥', unlocked: false },
+    { id: 'level_5', name: 'Rising Star', description: 'Reach level 5', icon: '⭐', unlocked: false },
+    { id: 'level_10', name: 'Master', description: 'Reach level 10', icon: '👑', unlocked: false },
+    { id: 'score_5000', name: 'High Scorer', description: 'Score 5000 points', icon: '🎯', unlocked: false },
+    { id: 'multiball', name: 'Double Trouble', description: 'Use multiball power-up', icon: '🎱', unlocked: false },
+    { id: 'fireball', name: 'Hot Shot', description: 'Use fireball power-up', icon: '🔥', unlocked: false }
+];
+
 let paddle = {
     x: GAME_WIDTH / 2 - PADDLE_WIDTH / 2,
     y: GAME_HEIGHT - 40,
@@ -45,7 +84,8 @@ let paddle = {
     speed: 8,
     baseWidth: PADDLE_WIDTH,
     glowIntensity: 0,
-    activePowerUps: {}
+    activePowerUps: {},
+    skin: 'classic'
 };
 
 let balls = [];
@@ -66,6 +106,169 @@ let lastHitTime = 0;
 let level = 1;
 let difficultyMultiplier = 1;
 let floatingTexts = [];
+let selectedBallSkin = 'classic';
+let selectedPaddleSkin = 'classic';
+let selectedParticleStyle = 'sparks';
+let unlockedItems = {};
+let achievements = [];
+let shopVisible = false;
+let totalBricksBroken = 0;
+let totalMultiballUsed = 0;
+let totalFireballUsed = 0;
+
+function loadProgress() {
+    const saved = localStorage.getItem('ballBreakersProgress');
+    if (saved) {
+        const data = JSON.parse(saved);
+        unlockedItems = data.unlockedItems || {};
+        achievements = data.achievements || ACHIEVEMENTS.map(a => ({ ...a, unlocked: false }));
+        selectedBallSkin = data.selectedBallSkin || 'classic';
+        selectedPaddleSkin = data.selectedPaddleSkin || 'classic';
+        selectedParticleStyle = data.selectedParticleStyle || 'sparks';
+        totalBricksBroken = data.totalBricksBroken || 0;
+        totalMultiballUsed = data.totalMultiballUsed || 0;
+        totalFireballUsed = data.totalFireballUsed || 0;
+    } else {
+        achievements = ACHIEVEMENTS.map(a => ({ ...a, unlocked: false }));
+    }
+    
+    BALL_SKINS.forEach(skin => {
+        skin.unlocked = unlockedItems[`ball_${skin.id}`] || skin.requirement === null;
+    });
+    
+    PADDLE_SKINS.forEach(skin => {
+        skin.unlocked = unlockedItems[`paddle_${skin.id}`] || skin.requirement === null;
+    });
+    
+    PARTICLE_STYLES.forEach(style => {
+        style.unlocked = unlockedItems[`particle_${style.id}`] || style.requirement === null;
+    });
+    
+    checkAchievements();
+}
+
+function saveProgress() {
+    const data = {
+        unlockedItems,
+        achievements,
+        selectedBallSkin,
+        selectedPaddleSkin,
+        selectedParticleStyle,
+        totalBricksBroken,
+        totalMultiballUsed,
+        totalFireballUsed
+    };
+    localStorage.setItem('ballBreakersProgress', JSON.stringify(data));
+}
+
+function checkAchievements() {
+    const unlocks = [];
+    
+    BALL_SKINS.forEach(skin => {
+        if (!skin.unlocked && skin.requirement) {
+            let unlocked = false;
+            if (skin.requirement.type === 'score' && score >= skin.requirement.value) unlocked = true;
+            if (skin.requirement.type === 'level' && level >= skin.requirement.value) unlocked = true;
+            if (skin.requirement.type === 'combo' && comboCount >= skin.requirement.value) unlocked = true;
+            
+            if (unlocked) {
+                skin.unlocked = true;
+                unlocks.push(skin.name);
+            }
+        }
+    });
+    
+    PADDLE_SKINS.forEach(skin => {
+        if (!skin.unlocked && skin.requirement) {
+            let unlocked = false;
+            if (skin.requirement.type === 'score' && score >= skin.requirement.value) unlocked = true;
+            if (skin.requirement.type === 'level' && level >= skin.requirement.value) unlocked = true;
+            if (skin.requirement.type === 'combo' && comboCount >= skin.requirement.value) unlocked = true;
+            
+            if (unlocked) {
+                skin.unlocked = true;
+                unlocks.push(skin.name);
+            }
+        }
+    });
+    
+    PARTICLE_STYLES.forEach(style => {
+        if (!style.unlocked && style.requirement) {
+            let unlocked = false;
+            if (style.requirement.type === 'score' && score >= style.requirement.value) unlocked = true;
+            if (style.requirement.type === 'level' && level >= style.requirement.value) unlocked = true;
+            if (style.requirement.type === 'combo' && comboCount >= style.requirement.value) unlocked = true;
+            
+            if (unlocked) {
+                style.unlocked = true;
+                unlocks.push(style.name);
+            }
+        }
+    });
+    
+    achievements.forEach(ach => {
+        if (!ach.unlocked) {
+            let unlocked = false;
+            switch(ach.id) {
+                case 'first_brick': unlocked = totalBricksBroken >= 1; break;
+                case 'combo_5': unlocked = comboCount >= 5; break;
+                case 'combo_10': unlocked = comboCount >= 10; break;
+                case 'level_5': unlocked = level >= 5; break;
+                case 'level_10': unlocked = level >= 10; break;
+                case 'score_5000': unlocked = score >= 5000; break;
+                case 'multiball': unlocked = totalMultiballUsed >= 1; break;
+                case 'fireball': unlocked = totalFireballUsed >= 1; break;
+            }
+            
+            if (unlocked) {
+                ach.unlocked = true;
+                unlocks.push(ach.name);
+            }
+        }
+    });
+    
+    if (unlocks.length > 0) {
+        addFloatingText(GAME_WIDTH / 2, GAME_HEIGHT / 2, `UNLOCKED: ${unlocks.join(', ')}!`, '#ffd700');
+    }
+    
+    saveProgress();
+}
+
+function selectBallSkin(skinId) {
+    const skin = BALL_SKINS.find(s => s.id === skinId);
+    if (skin && skin.unlocked) {
+        selectedBallSkin = skinId;
+        saveProgress();
+    }
+}
+
+function selectPaddleSkin(skinId) {
+    const skin = PADDLE_SKINS.find(s => s.id === skinId);
+    if (skin && skin.unlocked) {
+        selectedPaddleSkin = skinId;
+        saveProgress();
+    }
+}
+
+function selectParticleStyle(styleId) {
+    const style = PARTICLE_STYLES.find(s => s.id === styleId);
+    if (style && style.unlocked) {
+        selectedParticleStyle = styleId;
+        saveProgress();
+    }
+}
+
+function getCurrentBallSkin() {
+    return BALL_SKINS.find(s => s.id === selectedBallSkin) || BALL_SKINS[0];
+}
+
+function getCurrentPaddleSkin() {
+    return PADDLE_SKINS.find(s => s.id === selectedPaddleSkin) || PADDLE_SKINS[0];
+}
+
+function getCurrentParticleStyle() {
+    return PARTICLE_STYLES.find(s => s.id === selectedParticleStyle) || PARTICLE_STYLES[0];
+}
 
 function initAudio() {
     if (!audioCtx) {
@@ -128,12 +331,23 @@ function playSound(type, pitch = 1) {
             oscillator.start();
             oscillator.stop(audioCtx.currentTime + 0.1);
             break;
+        case 'unlock':
+            oscillator.frequency.setValueAtTime(523, audioCtx.currentTime);
+            oscillator.frequency.setValueAtTime(659, audioCtx.currentTime + 0.1);
+            oscillator.frequency.setValueAtTime(784, audioCtx.currentTime + 0.2);
+            oscillator.type = 'sine';
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.3);
+            break;
     }
 }
 
 function createParticles(x, y, color, count = 10) {
+    const style = getCurrentParticleStyle();
+    
     for (let i = 0; i < count; i++) {
-        particles.push({
+        let particle = {
             x: x,
             y: y,
             dx: (Math.random() - 0.5) * 10,
@@ -141,8 +355,28 @@ function createParticles(x, y, color, count = 10) {
             radius: Math.random() * 5 + 2,
             color: color,
             life: 1,
-            decay: Math.random() * 0.025 + 0.015
-        });
+            decay: Math.random() * 0.025 + 0.015,
+            style: style.id
+        };
+        
+        switch(style.id) {
+            case 'stars':
+                particle.type = 'star';
+                break;
+            case 'bubbles':
+                particle.dy = -Math.abs(particle.dy) - 1;
+                break;
+            case 'confetti':
+                particle.type = 'confetti';
+                particle.color = `hsl(${Math.random() * 360}, 70%, 50%)`;
+                break;
+            case 'energy':
+                particle.type = 'energy';
+                particle.radius = Math.random() * 3 + 1;
+                break;
+        }
+        
+        particles.push(particle);
     }
 }
 
@@ -162,14 +396,60 @@ function updateParticles() {
 
 function drawParticles() {
     for (const p of particles) {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius * p.life, 0, Math.PI * 2);
-        ctx.fillStyle = p.color;
+        ctx.save();
         ctx.globalAlpha = p.life;
-        ctx.fill();
+        
+        switch(p.type) {
+            case 'star':
+                drawStar(p.x, p.y, 5, p.radius * 2, p.radius, p.color);
+                break;
+            case 'confetti':
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, p.radius * 2, p.radius * 2);
+                break;
+            case 'energy':
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+                break;
+            default:
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius * p.life, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+        }
+        
         ctx.closePath();
+        ctx.restore();
     }
-    ctx.globalAlpha = 1;
+}
+
+function drawStar(cx, cy, spikes, outerRadius, innerRadius, color) {
+    let rot = Math.PI / 2 * 3;
+    let x = cx;
+    let y = cy;
+    let step = Math.PI / spikes;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - outerRadius);
+    for (let i = 0; i < spikes; i++) {
+        x = cx + Math.cos(rot) * outerRadius;
+        y = cy + Math.sin(rot) * outerRadius;
+        ctx.lineTo(x, y);
+        rot += step;
+
+        x = cx + Math.cos(rot) * innerRadius;
+        y = cy + Math.sin(rot) * innerRadius;
+        ctx.lineTo(x, y);
+        rot += step;
+    }
+    ctx.lineTo(cx, cy - outerRadius);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
 }
 
 function applyScreenShake() {
@@ -230,6 +510,7 @@ function activatePowerUp(powerUp) {
     
     switch(powerUp.type) {
         case 'multiball':
+            totalMultiballUsed++;
             const baseBall = balls[0] || { x: paddle.x + paddle.width / 2, y: paddle.y - 20, dx: 3, dy: -4, radius: BALL_RADIUS };
             for (let i = 0; i < 2; i++) {
                 balls.push({
@@ -259,6 +540,7 @@ function activatePowerUp(powerUp) {
             break;
             
         case 'fireball':
+            totalFireballUsed++;
             for (const ball of balls) {
                 ball.fireball = true;
             }
@@ -440,7 +722,9 @@ function updateUI() {
 }
 
 function drawPaddle() {
-    let glowColor = '#e94560';
+    const skin = getCurrentPaddleSkin();
+    let glowColor = skin.color;
+    
     if (paddle.activePowerUps.fireball) glowColor = '#ff6b6b';
     else if (paddle.activePowerUps.expand) glowColor = '#1dd1a1';
     else if (paddle.activePowerUps.shrink) glowColor = '#ee5a24';
@@ -452,15 +736,58 @@ function drawPaddle() {
     
     ctx.beginPath();
     ctx.roundRect(paddle.x, paddle.y, paddle.width, paddle.height, 5);
-    ctx.fillStyle = glowColor;
+    
+    switch(skin.pattern) {
+        case 'gradient':
+            const gradient = ctx.createLinearGradient(paddle.x, paddle.y, paddle.x + paddle.width, paddle.y);
+            gradient.addColorStop(0, skin.color);
+            gradient.addColorStop(1, skin.secondaryColor);
+            ctx.fillStyle = gradient;
+            break;
+        case 'striped':
+            ctx.fillStyle = skin.color;
+            break;
+        case 'wave':
+            ctx.fillStyle = skin.color;
+            break;
+        case 'cyber':
+            ctx.fillStyle = '#000000';
+            break;
+        case 'shimmer':
+            const shimmerGrad = ctx.createLinearGradient(paddle.x, paddle.y, paddle.x, paddle.y + paddle.height);
+            shimmerGrad.addColorStop(0, skin.color);
+            shimmerGrad.addColorStop(0.5, '#ffffff');
+            shimmerGrad.addColorStop(1, skin.color);
+            ctx.fillStyle = shimmerGrad;
+            break;
+        default:
+            ctx.fillStyle = skin.color;
+    }
+    
     ctx.fill();
     ctx.closePath();
     
-    ctx.beginPath();
-    ctx.roundRect(paddle.x + 3, paddle.y + 3, paddle.width - 6, paddle.height - 6, 3);
-    ctx.fillStyle = '#ff6b6b';
-    ctx.fill();
-    ctx.closePath();
+    switch(skin.pattern) {
+        case 'striped':
+            ctx.fillStyle = skin.secondaryColor;
+            for (let i = 10; i < paddle.width - 10; i += 20) {
+                ctx.fillRect(paddle.x + i, paddle.y, 8, paddle.height);
+            }
+            break;
+        case 'cyber':
+            ctx.strokeStyle = skin.color;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(paddle.x + 2, paddle.y + 2, paddle.width - 4, paddle.height - 4);
+            ctx.fillStyle = skin.secondaryColor;
+            ctx.fillRect(paddle.x + 10, paddle.y + 5, paddle.width - 20, paddle.height - 10);
+            break;
+        default:
+            ctx.beginPath();
+            ctx.roundRect(paddle.x + 3, paddle.y + 3, paddle.width - 6, paddle.height - 6, 3);
+            ctx.fillStyle = skin.secondaryColor;
+            ctx.fill();
+            ctx.closePath();
+    }
     
     ctx.shadowBlur = 0;
     
@@ -474,6 +801,12 @@ function drawPaddle() {
 function drawBall(ball) {
     if (!ball.active) return;
     
+    const skin = getCurrentBallSkin();
+    const isRainbow = skin.id === 'rainbow' && Math.floor(Date.now() / 100) % 2 === 0;
+    const ballColor = isRainbow ? `hsl(${(Date.now() / 20) % 360}, 100%, 50%)` : (ball.fireball ? '#ff8800' : skin.color);
+    const ballGlowColor = isRainbow ? '#ffffff' : (ball.fireball ? '#ff4400' : skin.glowColor);
+    const ballTrailColor = isRainbow ? `hsl(${(Date.now() / 20 + 180) % 360}, 100%, 70%)` : (ball.fireball ? '#ff6600' : skin.trailColor);
+    
     ball.trail.push({ x: ball.x, y: ball.y, alpha: 1 });
     if (ball.trail.length > 12) ball.trail.shift();
     
@@ -484,17 +817,19 @@ function drawBall(ball) {
         
         ctx.beginPath();
         ctx.arc(t.x, t.y, size, 0, Math.PI * 2);
-        ctx.fillStyle = ball.fireball ? `rgba(255, 100, 50, ${alpha})` : `rgba(162, 210, 255, ${alpha})`;
+        ctx.fillStyle = isRainbow ? `hsl(${(i * 20 + Date.now() / 10) % 360}, 100%, 70%)` : ballTrailColor;
+        ctx.globalAlpha = alpha;
         ctx.fill();
         ctx.closePath();
     }
     
-    ctx.shadowBlur = ball.fireball ? 15 : 10;
-    ctx.shadowColor = ball.fireball ? '#ff4400' : '#48dbfb';
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = ball.fireball ? 15 : 12;
+    ctx.shadowColor = ballGlowColor;
     
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-    ctx.fillStyle = ball.fireball ? '#ff8800' : '#fff';
+    ctx.fillStyle = ballColor;
     ctx.fill();
     ctx.closePath();
     
@@ -502,7 +837,7 @@ function drawBall(ball) {
     
     ctx.beginPath();
     ctx.arc(ball.x - 2, ball.y - 2, ball.radius / 2, 0, Math.PI * 2);
-    ctx.fillStyle = ball.fireball ? '#ffcc00' : '#a2d2ff';
+    ctx.fillStyle = isRainbow ? '#ffffff' : (ball.fireball ? '#ffcc00' : skin.trailColor);
     ctx.fill();
     ctx.closePath();
 }
@@ -550,6 +885,7 @@ function collisionDetection(ball) {
                     }
                     
                     b.status = 0;
+                    totalBricksBroken++;
                     
                     const hitTime = now - lastHitTime;
                     if (hitTime < 500) {
@@ -712,6 +1048,7 @@ function update() {
                     highScore = score;
                     localStorage.setItem('ballBreakersHighScore', highScore);
                 }
+                checkAchievements();
                 showOverlay('GAME OVER', `Score: ${score} | High Score: ${highScore}\nPress SPACE to restart`, 'game-over');
             } else {
                 resetBall();
@@ -732,6 +1069,7 @@ function gameLoop() {
 
 function startGame() {
     initAudio();
+    checkAchievements();
     if (gameState === 'start' || gameState === 'gameover' || gameState === 'victory') {
         initGame();
         for (const ball of balls) {
@@ -755,6 +1093,153 @@ function togglePause() {
     }
 }
 
+function showShop() {
+    shopVisible = true;
+    gameState = 'shop';
+    
+    let shopHTML = `
+        <div class="shop-container">
+            <h1>🛒 COSMETICS SHOP</h1>
+            <div class="shop-section">
+                <h2>🎱 Ball Skins</h2>
+                <div class="shop-items">
+    `;
+    
+    BALL_SKINS.forEach(skin => {
+        const isSelected = selectedBallSkin === skin.id;
+        const unlocked = skin.unlocked;
+        const reqText = skin.requirement ? `Level ${skin.requirement.value}` : (skin.requirement && skin.requirement.type === 'score' ? `${skin.requirement.value} pts` : (skin.requirement ? `${skin.requirement.type}: ${skin.requirement.value}` : 'None'));
+        shopHTML += `
+            <div class="shop-item ${isSelected ? 'selected' : ''} ${unlocked ? 'unlocked' : 'locked'}" 
+                 onclick="${unlocked ? `selectBallSkin('${skin.id}')` : ''}">
+                <div class="item-preview" style="background: ${skin.color}; box-shadow: 0 0 10px ${skin.glowColor};"></div>
+                <span>${skin.name}</span>
+                <small>${unlocked ? (isSelected ? '✓ Selected' : 'Click to select') : `Locked: ${reqText}`}</small>
+            </div>
+        `;
+    });
+    
+    shopHTML += `
+                </div>
+            </div>
+            <div class="shop-section">
+                <h2>🏓 Paddle Skins</h2>
+                <div class="shop-items">
+    `;
+    
+    PADDLE_SKINS.forEach(skin => {
+        const isSelected = selectedPaddleSkin === skin.id;
+        const unlocked = skin.unlocked;
+        const reqText = skin.requirement ? `${skin.requirement.type}: ${skin.requirement.value}` : 'None';
+        shopHTML += `
+            <div class="shop-item ${isSelected ? 'selected' : ''} ${unlocked ? 'unlocked' : 'locked'}" 
+                 onclick="${unlocked ? `selectPaddleSkin('${skin.id}')` : ''}">
+                <div class="item-preview" style="background: linear-gradient(45deg, ${skin.color}, ${skin.secondaryColor});"></div>
+                <span>${skin.name}</span>
+                <small>${unlocked ? (isSelected ? '✓ Selected' : 'Click to select') : `Locked: ${reqText}`}</small>
+            </div>
+        `;
+    });
+    
+    shopHTML += `
+                </div>
+            </div>
+            <div class="shop-section">
+                <h2>✨ Particle Effects</h2>
+                <div class="shop-items">
+    `;
+    
+    PARTICLE_STYLES.forEach(style => {
+        const isSelected = selectedParticleStyle === style.id;
+        const unlocked = style.unlocked;
+        const reqText = style.requirement ? `${style.requirement.type}: ${style.requirement.value}` : 'None';
+        shopHTML += `
+            <div class="shop-item ${isSelected ? 'selected' : ''} ${unlocked ? 'unlocked' : 'locked'}" 
+                 onclick="${unlocked ? `selectParticleStyle('${style.id}')` : ''}">
+                <div class="item-preview" style="background: ${style.id === 'stars' ? '#ffd700' : style.id === 'bubbles' ? '#00ccff' : style.id === 'confetti' ? '#ff69b4' : style.id === 'energy' ? '#00ff00' : '#ff6b6b'};"></div>
+                <span>${style.name}</span>
+                <small>${unlocked ? (isSelected ? '✓ Selected' : 'Click to select') : `Locked: ${reqText}`}</small>
+            </div>
+        `;
+    });
+    
+    shopHTML += `
+                </div>
+            </div>
+            <div class="shop-section">
+                <h2>🏆 Achievements</h2>
+                <div class="achievements-grid">
+    `;
+    
+    achievements.forEach(ach => {
+        shopHTML += `
+            <div class="achievement ${ach.unlocked ? 'unlocked' : 'locked'}">
+                <span class="achievement-icon">${ach.unlocked ? ach.icon : '🔒'}</span>
+                <span class="achievement-name">${ach.name}</span>
+                <span class="achievement-desc">${ach.description}</span>
+            </div>
+        `;
+    });
+    
+    shopHTML += `
+                </div>
+            </div>
+            <button class="close-btn" onclick="closeShop()">Close Shop</button>
+        </div>
+    `;
+    
+    overlay.innerHTML = shopHTML;
+    overlay.classList.remove('hidden');
+}
+
+function closeShop() {
+    shopVisible = false;
+    gameState = 'start';
+    showOverlay('BALL BREAKERS', 'Press SPACE to Start\nPress S for Shop');
+}
+
+function showStats() {
+    const statsHTML = `
+        <div class="stats-container">
+            <h1>📊 STATS</h1>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-value">${score}</span>
+                    <span class="stat-label">Score</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">${highScore}</span>
+                    <span class="stat-label">High Score</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">${level}</span>
+                    <span class="stat-label">Level</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">${comboCount}</span>
+                    <span class="stat-label">Max Combo</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">${totalBricksBroken}</span>
+                    <span class="stat-label">Bricks Broken</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">${achievements.filter(a => a.unlocked).length}/${achievements.length}</span>
+                    <span class="stat-label">Achievements</span>
+                </div>
+            </div>
+            <button class="close-btn" onclick="closeStats()">Close</button>
+        </div>
+    `;
+    overlay.innerHTML = statsHTML;
+    overlay.classList.remove('hidden');
+}
+
+function closeStats() {
+    gameState = 'start';
+    showOverlay('BALL BREAKERS', 'Press SPACE to Start\nPress S for Shop');
+}
+
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Right' || e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
         rightPressed = true;
@@ -764,10 +1249,22 @@ document.addEventListener('keydown', (e) => {
     }
     if (e.key === ' ' || e.key === 'Spacebar') {
         e.preventDefault();
-        startGame();
+        if (gameState === 'start' || gameState === 'gameover' || gameState === 'victory') {
+            startGame();
+        }
     }
     if (e.key === 'p' || e.key === 'P') {
         togglePause();
+    }
+    if (e.key === 's' || e.key === 'S') {
+        if (gameState === 'start') {
+            showShop();
+        }
+    }
+    if (e.key === 'i' || e.key === 'I') {
+        if (gameState === 'start') {
+            showStats();
+        }
     }
 });
 
@@ -780,7 +1277,8 @@ document.addEventListener('keyup', (e) => {
     }
 });
 
+loadProgress();
 createBricks();
 draw();
-showOverlay('BALL BREAKERS', 'Press SPACE to start');
+showOverlay('BALL BREAKERS', 'Press SPACE to Start\nPress S for Shop | Press I for Stats');
 gameLoop();
