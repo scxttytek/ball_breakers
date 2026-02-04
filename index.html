@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ball Breakers</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <div class="score">Score: <span id="score">0</span></div>
+            <div class="lives">Lives: <span id="lives">3</span></div>
+        </div>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="overlay" class="overlay">
+            <div class="overlay-content">
+                <h1 id="overlayTitle">BALL BREAKERS</h1>
+                <p id="overlaySubtitle">Press SPACE to Start</p>
+                <div class="controls">
+                    <p>← → or A/D to move paddle</p>
+                    <p>P to pause</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
