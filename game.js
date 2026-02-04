@@ -1096,148 +1096,176 @@ function togglePause() {
 function showShop() {
     shopVisible = true;
     gameState = 'shop';
-    
-    let shopHTML = `
-        <div class="shop-container">
-            <h1>🛒 COSMETICS SHOP</h1>
-            <div class="shop-section">
-                <h2>🎱 Ball Skins</h2>
-                <div class="shop-items">
-    `;
-    
-    BALL_SKINS.forEach(skin => {
-        const isSelected = selectedBallSkin === skin.id;
-        const unlocked = skin.unlocked;
-        const reqText = skin.requirement ? `Level ${skin.requirement.value}` : (skin.requirement && skin.requirement.type === 'score' ? `${skin.requirement.value} pts` : (skin.requirement ? `${skin.requirement.type}: ${skin.requirement.value}` : 'None'));
-        shopHTML += `
-            <div class="shop-item ${isSelected ? 'selected' : ''} ${unlocked ? 'unlocked' : 'locked'}" 
-                 onclick="${unlocked ? `selectBallSkin('${skin.id}')` : ''}">
-                <div class="item-preview" style="background: ${skin.color}; box-shadow: 0 0 10px ${skin.glowColor};"></div>
-                <span>${skin.name}</span>
-                <small>${unlocked ? (isSelected ? '✓ Selected' : 'Click to select') : `Locked: ${reqText}`}</small>
-            </div>
-        `;
-    });
-    
-    shopHTML += `
-                </div>
-            </div>
-            <div class="shop-section">
-                <h2>🏓 Paddle Skins</h2>
-                <div class="shop-items">
-    `;
-    
-    PADDLE_SKINS.forEach(skin => {
-        const isSelected = selectedPaddleSkin === skin.id;
-        const unlocked = skin.unlocked;
-        const reqText = skin.requirement ? `${skin.requirement.type}: ${skin.requirement.value}` : 'None';
-        shopHTML += `
-            <div class="shop-item ${isSelected ? 'selected' : ''} ${unlocked ? 'unlocked' : 'locked'}" 
-                 onclick="${unlocked ? `selectPaddleSkin('${skin.id}')` : ''}">
-                <div class="item-preview" style="background: linear-gradient(45deg, ${skin.color}, ${skin.secondaryColor});"></div>
-                <span>${skin.name}</span>
-                <small>${unlocked ? (isSelected ? '✓ Selected' : 'Click to select') : `Locked: ${reqText}`}</small>
-            </div>
-        `;
-    });
-    
-    shopHTML += `
-                </div>
-            </div>
-            <div class="shop-section">
-                <h2>✨ Particle Effects</h2>
-                <div class="shop-items">
-    `;
-    
-    PARTICLE_STYLES.forEach(style => {
-        const isSelected = selectedParticleStyle === style.id;
-        const unlocked = style.unlocked;
-        const reqText = style.requirement ? `${style.requirement.type}: ${style.requirement.value}` : 'None';
-        shopHTML += `
-            <div class="shop-item ${isSelected ? 'selected' : ''} ${unlocked ? 'unlocked' : 'locked'}" 
-                 onclick="${unlocked ? `selectParticleStyle('${style.id}')` : ''}">
-                <div class="item-preview" style="background: ${style.id === 'stars' ? '#ffd700' : style.id === 'bubbles' ? '#00ccff' : style.id === 'confetti' ? '#ff69b4' : style.id === 'energy' ? '#00ff00' : '#ff6b6b'};"></div>
-                <span>${style.name}</span>
-                <small>${unlocked ? (isSelected ? '✓ Selected' : 'Click to select') : `Locked: ${reqText}`}</small>
-            </div>
-        `;
-    });
-    
-    shopHTML += `
-                </div>
-            </div>
-            <div class="shop-section">
-                <h2>🏆 Achievements</h2>
-                <div class="achievements-grid">
-    `;
-    
-    achievements.forEach(ach => {
-        shopHTML += `
-            <div class="achievement ${ach.unlocked ? 'unlocked' : 'locked'}">
-                <span class="achievement-icon">${ach.unlocked ? ach.icon : '🔒'}</span>
-                <span class="achievement-name">${ach.name}</span>
-                <span class="achievement-desc">${ach.description}</span>
-            </div>
-        `;
-    });
-    
-    shopHTML += `
-                </div>
-            </div>
-            <button class="close-btn" onclick="closeShop()">Close Shop</button>
-        </div>
-    `;
-    
-    overlay.innerHTML = shopHTML;
-    overlay.classList.remove('hidden');
+    showMainMenuOverlay();
 }
 
 function closeShop() {
     shopVisible = false;
     gameState = 'start';
-    showOverlay('BALL BREAKERS', 'Press SPACE to Start\nPress S for Shop');
+    showMainMenuOverlay();
 }
 
 function showStats() {
-    const statsHTML = `
-        <div class="stats-container">
-            <h1>📊 STATS</h1>
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <span class="stat-value">${score}</span>
-                    <span class="stat-label">Score</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value">${highScore}</span>
-                    <span class="stat-label">High Score</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value">${level}</span>
-                    <span class="stat-label">Level</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value">${comboCount}</span>
-                    <span class="stat-label">Max Combo</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value">${totalBricksBroken}</span>
-                    <span class="stat-label">Bricks Broken</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value">${achievements.filter(a => a.unlocked).length}/${achievements.length}</span>
-                    <span class="stat-label">Achievements</span>
-                </div>
-            </div>
-            <button class="close-btn" onclick="closeStats()">Close</button>
-        </div>
-    `;
-    overlay.innerHTML = statsHTML;
-    overlay.classList.remove('hidden');
+    gameState = 'stats';
+    showMainMenuOverlay();
 }
 
 function closeStats() {
     gameState = 'start';
-    showOverlay('BALL BREAKERS', 'Press SPACE to Start\nPress S for Shop');
+    showMainMenuOverlay();
+}
+
+function showMainMenuOverlay() {
+    if (gameState === 'shop') {
+        let shopHTML = `
+            <div class="shop-container">
+                <h1>🛒 COSMETICS SHOP</h1>
+                <div class="shop-section">
+                    <h2>🎱 Ball Skins</h2>
+                    <div class="shop-items">
+        `;
+        
+        BALL_SKINS.forEach(skin => {
+            const isSelected = selectedBallSkin === skin.id;
+            const unlocked = skin.unlocked;
+            const reqText = skin.requirement ? (skin.requirement.type === 'score' ? `${skin.requirement.value} pts` : `Level ${skin.requirement.value}`) : 'Unlocked';
+            shopHTML += `
+                <div class="shop-item ${isSelected ? 'selected' : ''} ${unlocked ? 'unlocked' : 'locked'}" 
+                     onclick="${unlocked ? `selectBallSkin('${skin.id}'); showShop();` : ''}">
+                    <div class="item-preview" style="background: ${skin.color}; box-shadow: 0 0 10px ${skin.glowColor};"></div>
+                    <span>${skin.name}</span>
+                    <small>${unlocked ? (isSelected ? '✓ Selected' : 'Click to select') : `Locked: ${reqText}`}</small>
+                </div>
+            `;
+        });
+        
+        shopHTML += `
+                    </div>
+                </div>
+                <div class="shop-section">
+                    <h2>🏓 Paddle Skins</h2>
+                    <div class="shop-items">
+        `;
+        
+        PADDLE_SKINS.forEach(skin => {
+            const isSelected = selectedPaddleSkin === skin.id;
+            const unlocked = skin.unlocked;
+            const reqText = skin.requirement ? (skin.requirement.type === 'score' ? `${skin.requirement.value} pts` : `Level ${skin.requirement.value}`) : 'Unlocked';
+            shopHTML += `
+                <div class="shop-item ${isSelected ? 'selected' : ''} ${unlocked ? 'unlocked' : 'locked'}" 
+                     onclick="${unlocked ? `selectPaddleSkin('${skin.id}'); showShop();` : ''}">
+                    <div class="item-preview" style="background: linear-gradient(45deg, ${skin.color}, ${skin.secondaryColor});"></div>
+                    <span>${skin.name}</span>
+                    <small>${unlocked ? (isSelected ? '✓ Selected' : 'Click to select') : `Locked: ${reqText}`}</small>
+                </div>
+            `;
+        });
+        
+        shopHTML += `
+                    </div>
+                </div>
+                <div class="shop-section">
+                    <h2>✨ Particle Effects</h2>
+                    <div class="shop-items">
+        `;
+        
+        PARTICLE_STYLES.forEach(style => {
+            const isSelected = selectedParticleStyle === style.id;
+            const unlocked = style.unlocked;
+            const reqText = style.requirement ? (style.requirement.type === 'score' ? `${style.requirement.value} pts` : `Level ${style.requirement.value}`) : 'Unlocked';
+            shopHTML += `
+                <div class="shop-item ${isSelected ? 'selected' : ''} ${unlocked ? 'unlocked' : 'locked'}" 
+                     onclick="${unlocked ? `selectParticleStyle('${style.id}'); showShop();` : ''}">
+                    <div class="item-preview" style="background: ${style.id === 'stars' ? '#ffd700' : style.id === 'bubbles' ? '#00ccff' : style.id === 'confetti' ? '#ff69b4' : style.id === 'energy' ? '#00ff00' : '#ff6b6b'};"></div>
+                    <span>${style.name}</span>
+                    <small>${unlocked ? (isSelected ? '✓ Selected' : 'Click to select') : `Locked: ${reqText}`}</small>
+                </div>
+            `;
+        });
+        
+        shopHTML += `
+                    </div>
+                </div>
+                <div class="shop-section">
+                    <h2>🏆 Achievements</h2>
+                    <div class="achievements-grid">
+        `;
+        
+        achievements.forEach(ach => {
+            shopHTML += `
+                <div class="achievement ${ach.unlocked ? 'unlocked' : 'locked'}">
+                    <span class="achievement-icon">${ach.unlocked ? ach.icon : '🔒'}</span>
+                    <span class="achievement-name">${ach.name}</span>
+                    <span class="achievement-desc">${ach.description}</span>
+                </div>
+            `;
+        });
+        
+        shopHTML += `
+                    </div>
+                </div>
+                <div class="menu-buttons">
+                    <button class="menu-btn" onclick="closeShop()">← Back to Menu</button>
+                    <button class="menu-btn stats-btn" onclick="showStats()">📊 Stats</button>
+                </div>
+            </div>
+        `;
+        
+        overlay.innerHTML = shopHTML;
+        overlay.classList.remove('hidden');
+    } else if (gameState === 'stats') {
+        const statsHTML = `
+            <div class="stats-container">
+                <h1>📊 STATS</h1>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-value">${score}</span>
+                        <span class="stat-label">Score</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">${highScore}</span>
+                        <span class="stat-label">High Score</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">${level}</span>
+                        <span class="stat-label">Level</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">${comboCount}</span>
+                        <span class="stat-label">Max Combo</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">${totalBricksBroken}</span>
+                        <span class="stat-label">Bricks Broken</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">${achievements.filter(a => a.unlocked).length}/${achievements.length}</span>
+                        <span class="stat-label">Achievements</span>
+                    </div>
+                </div>
+                <div class="menu-buttons">
+                    <button class="menu-btn" onclick="closeStats()">← Back to Menu</button>
+                    <button class="menu-btn shop-btn" onclick="showShop()">🛒 Shop</button>
+                </div>
+            </div>
+        `;
+        overlay.innerHTML = statsHTML;
+        overlay.classList.remove('hidden');
+    } else {
+        overlay.innerHTML = `
+            <div class="overlay-content">
+                <h1 id="overlayTitle">BALL BREAKERS</h1>
+                <p id="overlaySubtitle">Press SPACE to Start</p>
+                <div class="controls">
+                    <p>← → or A/D to move paddle</p>
+                    <p>P to pause</p>
+                    <p>S for Shop</p>
+                    <p>I for Stats</p>
+                </div>
+            </div>
+        `;
+        overlay.classList.remove('hidden');
+    }
 }
 
 document.addEventListener('keydown', (e) => {
@@ -1280,5 +1308,5 @@ document.addEventListener('keyup', (e) => {
 loadProgress();
 createBricks();
 draw();
-showOverlay('BALL BREAKERS', 'Press SPACE to Start\nPress S for Shop | Press I for Stats');
+showMainMenuOverlay();
 gameLoop();

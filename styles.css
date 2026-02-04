@@ -245,6 +245,49 @@ body {
     box-shadow: 0 5px 20px rgba(233, 69, 96, 0.4);
 }
 
+.menu-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 25px;
+}
+
+.menu-btn {
+    padding: 12px 25px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #fff;
+    background: linear-gradient(135deg, #0f3460, #16213e);
+    border: 2px solid #48dbfb;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.menu-btn:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, #16213e, #0f3460);
+    box-shadow: 0 5px 15px rgba(72, 219, 251, 0.3);
+}
+
+.stats-btn {
+    border-color: #feca57;
+}
+
+.stats-btn:hover {
+    box-shadow: 0 5px 15px rgba(254, 202, 87, 0.3);
+}
+
+.shop-btn {
+    border-color: #ff9ff3;
+}
+
+.shop-btn:hover {
+    box-shadow: 0 5px 15px rgba(255, 159, 243, 0.3);
+}
+
 .stats-container {
     padding: 30px;
     color: #fff;
