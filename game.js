@@ -713,6 +713,7 @@ function resetBall() {
     mainBall.x = paddle.x + paddle.width / 2;
     mainBall.y = paddle.y - mainBall.radius - 2;
     mainBall.active = false;
+    mainBall.trail = [];
     mainBall.fireball = paddle.activePowerUps.fireball ? true : false;
 }
 
